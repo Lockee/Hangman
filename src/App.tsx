@@ -1,5 +1,4 @@
-import React, { ButtonHTMLAttributes, useCallback, useState } from "react";
-import reactLogo from "./assets/react.svg";
+import React from "react";
 
 const keyboard = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
 const baseUrl = "https://random-word-api.herokuapp.com";
