@@ -13,7 +13,7 @@ type ButtonProps = {
 
 const Button = ({ label, color, onClick, disabled }: ButtonProps) => (
   <button
-    className={`font-mono ${color ?? ""} m-2 p-6 border-gray-50`}
+    className={`${color ?? ""} m-2 p-6 border-gray-50`}
     onClick={onClick}
     key={`char${label}`}
     disabled={disabled}
@@ -72,9 +72,9 @@ const App = () => {
 
   const fetchWord = React.useCallback(
     async (controller?: AbortController): Promise<string[]> => {
-      return fetch(`${baseUrl}/word`, { signal: controller?.signal })
-        .then((r) => r.json())
-        .catch(() => {});
+      return fetch(`${baseUrl}/word`, { signal: controller?.signal }).then(
+        (r) => r.json()
+      );
     },
     []
   );
@@ -112,10 +112,12 @@ const App = () => {
 
   React.useEffect(() => {
     const controller = new AbortController();
-    fetchWord(controller).then((words: string[]) => {
-      const word = words[0].split("");
-      setWord(word);
-    });
+    fetchWord(controller)
+      .then((words: string[]) => {
+        const word = words[0].split("");
+        setWord(word);
+      })
+      .catch(() => {});
 
     return () => {
       controller.abort();
@@ -125,7 +127,7 @@ const App = () => {
   return (
     <div className="flex flex-col items-center m-4 border-white-500">
       <h1 className="text-8xl mb-12">Hangman</h1>
-      <div className="min-w-full flex justify-around">
+      <div className="min-w-full flex justify-around font-mono ">
         <div className="flex flex-col justify-center items-center">
           <img
             src={`assets/stage${guessCount + 1}.png`}
