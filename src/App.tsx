@@ -1,56 +1,51 @@
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
 import React from "react";
-import Button from "./components/Button";
 import DisplayWord from "./components/DisplayWord";
 import Keyboard from "./components/Keyboard";
-import { useWord } from "./hooks/useWord";
-
-export type GameState = "running" | "won" | "failed";
+import Button from "./components/Button";
+import { fetchWord } from "./utils/fetchWord";
 
 const MAX_NUMBER_OF_WRONG_GUESSES = 10;
 
 const App = () => {
-  const [gameState, setGameState] = React.useState<GameState>("running");
   const [guessCount, setGuessCount] = React.useState(0);
   const [guessedLetters, setGuessedLetters] = React.useState<string[]>([]);
-  const { word } = useWord();
+  // FIX: for a brief second, when data has been refetched and the game was lost, the new word was fully displayed in red
+  const [waitForNewGame, setWaitForNewGame] = React.useState(false);
 
-  const buttonColor = (char: string) => {
-    if (gameState === "won") return "bg-green-500";
-    if (gameState === "failed") return "bg-pink-500";
-    if (guessedLetters.includes(char) && word.includes(char))
-      return "bg-green-500";
-    if (guessedLetters.includes(char) && !word.includes(char))
-      return "bg-pink-500";
-    return "bg-gray-500";
-  };
+  const {
+    data: word,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["word"],
+    queryFn: fetchWord,
+    refetchOnWindowFocus: false,
+    onSuccess: () => {
+      setGuessCount(0);
+      setGuessedLetters([]);
+      setWaitForNewGame(false);
+    },
+  });
 
-  const checkGameOver = (
-    guesses: number,
-    guessedLetters: string[]
-  ): GameState => {
-    if (guesses >= MAX_NUMBER_OF_WRONG_GUESSES) return "failed";
-    if (
-      guesses < MAX_NUMBER_OF_WRONG_GUESSES &&
-      word.every((char) => guessedLetters.includes(char))
-    )
-      return "won";
-    return "running";
-  };
+  const hasWon =
+    guessCount < MAX_NUMBER_OF_WRONG_GUESSES &&
+    word &&
+    word.every((char) => guessedLetters.includes(char));
+  const hasLost = guessCount >= MAX_NUMBER_OF_WRONG_GUESSES;
 
-  const handleClick = (char: string) => {
+  const handleKeyClicked = (char: string) => {
     setGuessedLetters((prevGuessLetters) => {
       const newGuessedLetters = [...prevGuessLetters, char];
-      if (!word.includes(char))
+      if (!word?.includes(char))
         setGuessCount((prevGuessCount) => {
           const newGuessCount = prevGuessCount + 1;
-          const newState = checkGameOver(newGuessCount, newGuessedLetters);
-          const b = setGameState(newState);
           return newGuessCount;
         });
-      else {
-        const newState = checkGameOver(guessCount, newGuessedLetters);
-        setGameState(newState);
-      }
       return newGuessedLetters;
     });
   };
@@ -66,19 +61,49 @@ const App = () => {
             width="300"
             height="600"
           />
-          <div>{`Wrong Guesses: ${guessCount}/10`}</div>
+          <div>{`Guesses Left: ${
+            MAX_NUMBER_OF_WRONG_GUESSES - guessCount
+          }`}</div>
         </div>
         <div className="flex flex-col justify-around">
-          <DisplayWord
-            word={word}
-            guessedLetters={guessedLetters}
-            state={gameState}
-          />
-          <Keyboard
-            guessedLetters={guessedLetters}
-            determineColor={buttonColor}
-            onClick={(key) => handleClick(key)}
-          />
+          {!word || isLoading || waitForNewGame ? (
+            <div>Loading...</div>
+          ) : (
+            <>
+              <DisplayWord
+                word={word}
+                guessedLetters={guessedLetters}
+                hasLost={hasLost ?? false}
+                hasWon={hasWon ?? false}
+              />
+              <Keyboard
+                guessedLetters={guessedLetters}
+                onClick={(key) => handleKeyClicked(key)}
+                winningCondition={(key) =>
+                  hasWon ||
+                  (!hasLost &&
+                    guessedLetters.includes(key) &&
+                    word.includes(key))
+                }
+                lostCondition={(key) =>
+                  hasLost ||
+                  (!hasWon &&
+                    guessedLetters.includes(key) &&
+                    !word.includes(key))
+                }
+              />
+              {(hasWon || hasLost) && (
+                <Button
+                  label="Restart Game"
+                  color="bg-gray-500"
+                  onClick={() => {
+                    setWaitForNewGame(true);
+                    refetch();
+                  }}
+                />
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>

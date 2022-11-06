@@ -7,7 +7,7 @@ type ButtonProps = {
 
 const Button = ({ label, color, onClick, disabled }: ButtonProps) => (
   <button
-    className={`${color ?? ""} m-2 p-6 border-gray-50`}
+    className={`${color ?? ""} m-2 p-6 border-gray-50 border-2`}
     onClick={onClick}
     key={`char${label}`}
     disabled={disabled}

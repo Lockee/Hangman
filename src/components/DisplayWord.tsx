@@ -1,21 +1,25 @@
-import { GameState } from "@/App";
-
 type DisplayWordProps = {
   readonly word: string[];
   readonly guessedLetters: string[];
-  readonly state: GameState;
+  readonly hasWon: boolean;
+  readonly hasLost: boolean;
 };
 
-const DisplayWord = ({ word, state, guessedLetters }: DisplayWordProps) => {
+const DisplayWord = ({
+  word,
+  hasWon,
+  hasLost,
+  guessedLetters,
+}: DisplayWordProps) => {
   return (
     <div className="flex justify-center gap-2 mt-4 text-6xl">
       {word.length > 0 &&
         [word.at(0)!.toUpperCase(), ...word.slice(1)].map((char, index) => {
-          return state === "won" ? (
+          return hasWon ? (
             <div key={`${char}OnPos${index}`} className="text-green-500">
               {char}
             </div>
-          ) : state === "failed" ? (
+          ) : hasLost ? (
             <div key={`${char}OnPos${index}`} className="text-pink-500">
               {char}
             </div>
